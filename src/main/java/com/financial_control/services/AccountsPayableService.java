@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.financial_control.dtos.AccountsPayableDTO;
 import com.financial_control.repositories.AccountsPayableRepository;
+import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 @Service
 public class AccountsPayableService {
@@ -17,6 +18,15 @@ public class AccountsPayableService {
 	
 	@Transactional(readOnly = true)
 	public List<AccountsPayableDTO> getByMonthAndYear(Integer month, Integer year) {
-		return accountsPayableRepository.findByMonthAndYear(month, year);
+		List<AccountsPayableDTO> list =
+	            accountsPayableRepository.findByMonthAndYear(month, year);
+
+	    if (list.isEmpty()) {
+	        throw new ResourceNotFoundException(
+	                "No accounts payable found for month " + month + " and year " + year
+	        );
+	    }
+
+	    return list;
 	}
 }
