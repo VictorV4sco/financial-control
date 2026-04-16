@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.financial_control.dtos.AccountsPayableDTO;
+import com.financial_control.dtos.AccountsPayableReadDTO;
 import com.financial_control.entities.AccountsPayable;
 
 @Repository
 public interface AccountsPayableRepository extends JpaRepository<AccountsPayable, Long>{
 
 	@Query("""
-			SELECT new com.financial_control.dtos.AccountsPayableDTO(
+			SELECT new com.financial_control.dtos.AccountsPayableReadDTO(
 			    a.id,
 			    a.description,
 			    a.amount,
@@ -25,6 +25,6 @@ public interface AccountsPayableRepository extends JpaRepository<AccountsPayable
 			WHERE FUNCTION('MONTH', a.dueDate) = :month
 			AND FUNCTION('YEAR', a.dueDate) = :year
 			""")
-			List<AccountsPayableDTO> findByMonthAndYear(@Param("month") int month,
+			List<AccountsPayableReadDTO> findByMonthAndYear(@Param("month") int month,
 			                                            @Param("year") int year);
 }

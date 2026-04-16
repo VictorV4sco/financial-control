@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.financial_control.dtos.AccountsPayableDTO;
+import com.financial_control.dtos.AccountsPayableReadDTO;
 import com.financial_control.repositories.AccountsPayableRepository;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
@@ -17,8 +17,8 @@ public class AccountsPayableService {
 	private AccountsPayableRepository accountsPayableRepository;
 	
 	@Transactional(readOnly = true)
-	public List<AccountsPayableDTO> getByMonthAndYear(Integer month, Integer year) {
-		List<AccountsPayableDTO> list =
+	public List<AccountsPayableReadDTO> getByMonthAndYear(Integer month, Integer year) {
+		List<AccountsPayableReadDTO> list =
 	            accountsPayableRepository.findByMonthAndYear(month, year);
 
 	    if (list.isEmpty()) {

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.financial_control.dtos.AccountsPayableDTO;
+import com.financial_control.dtos.AccountsPayableReadDTO;
 import com.financial_control.services.AccountsPayableService;
 
 @RestController
@@ -21,7 +21,7 @@ public class AccountsPayableController {
 	private AccountsPayableService accountsPayableService;
 
 	@GetMapping
-	public ResponseEntity<List<AccountsPayableDTO>> getByMonthAndYear(
+	public ResponseEntity<List<AccountsPayableReadDTO>> getByMonthAndYear(
 			@RequestParam Integer month,
 			@RequestParam Integer year) {
 		return new ResponseEntity<>(accountsPayableService.getByMonthAndYear(month, year), HttpStatus.OK);
