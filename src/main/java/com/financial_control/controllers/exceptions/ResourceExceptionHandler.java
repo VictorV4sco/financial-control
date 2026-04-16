@@ -63,6 +63,19 @@ public class ResourceExceptionHandler {
 
         return ResponseEntity.status(status).body(err);
     }
+    
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<StandardError> handleHttpMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException e,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatusCode.valueOf(400),
+                "Malformed JSON",
+                "Invalid request body. Check date format (expected yyyy-MM-dd).",
+                request.getRequestURI()
+        );
+    }
 
     private ResponseEntity<StandardError> buildError(
             HttpStatusCode status,
