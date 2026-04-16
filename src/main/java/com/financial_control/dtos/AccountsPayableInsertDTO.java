@@ -7,6 +7,7 @@ import com.financial_control.enums.PaymentStatus;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -27,7 +28,6 @@ public record AccountsPayableInsertDTO(
 		@FutureOrPresent(message = "Due date cannot be in the past")
 		LocalDate dueDate,
 		
-		@NotNull(message = "Status is required")
 		PaymentStatus status
 		) {
 
