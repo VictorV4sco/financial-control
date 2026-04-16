@@ -6,6 +6,8 @@ import java.util.Objects;
 import com.financial_control.enums.PaymentStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,6 +21,7 @@ public class AccountsPayable {
 	private String description;
 	private Double amount;
 	private LocalDate dueDate;
+	@Enumerated(EnumType.STRING)
 	private PaymentStatus status;
 	
 	public AccountsPayable() {	
