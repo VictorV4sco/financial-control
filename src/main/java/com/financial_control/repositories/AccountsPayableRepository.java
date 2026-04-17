@@ -11,7 +11,7 @@ import com.financial_control.dtos.AccountsPayableReadDTO;
 import com.financial_control.entities.AccountsPayable;
 
 @Repository
-public interface AccountsPayableRepository extends JpaRepository<AccountsPayable, Long>{
+public interface AccountsPayableRepository extends JpaRepository<AccountsPayable, Long> {
 
 	@Query("""
 			SELECT new com.financial_control.dtos.AccountsPayableReadDTO(
@@ -25,6 +25,5 @@ public interface AccountsPayableRepository extends JpaRepository<AccountsPayable
 			WHERE FUNCTION('MONTH', a.dueDate) = :month
 			AND FUNCTION('YEAR', a.dueDate) = :year
 			""")
-			List<AccountsPayableReadDTO> findByMonthAndYear(@Param("month") int month,
-			                                            @Param("year") int year);
+	List<AccountsPayableReadDTO> findByMonthAndYear(@Param("month") int month, @Param("year") int year);
 }

@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -64,15 +65,15 @@ public class ResourceExceptionHandler {
         return ResponseEntity.status(status).body(err);
     }
     
-    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<StandardError> handleHttpMessageNotReadable(
-            org.springframework.http.converter.HttpMessageNotReadableException e,
+            HttpMessageNotReadableException e,
             HttpServletRequest request) {
 
         return buildError(
                 HttpStatusCode.valueOf(400),
                 "Malformed JSON",
-                "Invalid request body. Check date format (expected yyyy-MM-dd).",
+                "Invalid request body.",
                 request.getRequestURI()
         );
     }

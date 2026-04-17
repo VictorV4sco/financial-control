@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.financial_control.dtos.AccountsPayableInsertDTO;
 import com.financial_control.dtos.AccountsPayableReadDTO;
+import com.financial_control.dtos.AccountsPayableUpdateDTO;
 import com.financial_control.entities.AccountsPayable;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.AccountsPayableRepository;
@@ -43,6 +44,18 @@ public class AccountsPayableService {
 		
 		AccountsPayable billSaved = accountsPayableRepository.save(bill);
 		return new AccountsPayableInsertDTO(billSaved.getId(), billSaved.getDescription(), billSaved.getAmount(), billSaved.getDueDate(), billSaved.getStatus());
+	}
+
+	@Transactional
+	public AccountsPayableUpdateDTO updateAccountPayable(Long id, AccountsPayableInsertDTO dto) {
+		AccountsPayable bill = accountsPayableRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("ID not found"));
+		bill.setDescription(dto.description());
+		bill.setAmount(dto.amount());
+		bill.setDueDate(dto.dueDate());
+		bill.setStatus(dto.status());
+		
+		AccountsPayable billSaved = accountsPayableRepository.save(bill);
+		return new AccountsPayableUpdateDTO(billSaved.getId(), billSaved.getDescription(), billSaved.getAmount(), billSaved.getDueDate(), billSaved.getStatus());
 	}
 	
 }
