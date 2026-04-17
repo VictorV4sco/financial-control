@@ -1,5 +1,6 @@
 package com.financial_control.services;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +21,14 @@ public class AccountsPayableService {
 	@Autowired
 	private AccountsPayableRepository accountsPayableRepository;
 	
-	@Transactional(readOnly = true)
+	@Transactional
 	public List<AccountsPayableReadDTO> getByMonthAndYear(Integer month, Integer year) {
-		List<AccountsPayableReadDTO> list =
+	    
+	    accountsPayableRepository.updateOverdueByMonthAndYear(
+	        month, year, LocalDate.now(), PaymentStatus.OVERDUE
+	    );
+
+	    List<AccountsPayableReadDTO> list =
 	            accountsPayableRepository.findByMonthAndYear(month, year);
 
 	    if (list.isEmpty()) {

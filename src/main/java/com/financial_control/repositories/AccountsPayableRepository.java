@@ -1,14 +1,17 @@
 package com.financial_control.repositories;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.financial_control.dtos.AccountsPayableReadDTO;
 import com.financial_control.entities.AccountsPayable;
+import com.financial_control.enums.PaymentStatus;
 
 @Repository
 public interface AccountsPayableRepository extends JpaRepository<AccountsPayable, Long> {
@@ -26,4 +29,20 @@ public interface AccountsPayableRepository extends JpaRepository<AccountsPayable
 			AND FUNCTION('YEAR', a.dueDate) = :year
 			""")
 	List<AccountsPayableReadDTO> findByMonthAndYear(@Param("month") int month, @Param("year") int year);
+	
+	@Modifying
+	@Query("""
+	    UPDATE AccountsPayable a
+	    SET a.status = :status
+	    WHERE FUNCTION('MONTH', a.dueDate) = :month
+	    AND FUNCTION('YEAR', a.dueDate) = :year
+	    AND a.dueDate < :today
+	    AND a.status != :status
+	    """)
+	void updateOverdueByMonthAndYear(
+	    @Param("month") int month,
+	    @Param("year") int year,
+	    @Param("today") LocalDate today,
+	    @Param("status") PaymentStatus status
+	);
 }
