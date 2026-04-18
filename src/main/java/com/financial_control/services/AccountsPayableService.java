@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.financial_control.dtos.AccountsPayableInsertDTO;
@@ -13,6 +15,7 @@ import com.financial_control.dtos.AccountsPayableUpdateDTO;
 import com.financial_control.entities.AccountsPayable;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.AccountsPayableRepository;
+import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 @Service
@@ -62,6 +65,19 @@ public class AccountsPayableService {
 		
 		AccountsPayable billSaved = accountsPayableRepository.save(bill);
 		return new AccountsPayableUpdateDTO(billSaved.getId(), billSaved.getDescription(), billSaved.getAmount(), billSaved.getDueDate(), billSaved.getStatus());
+	}
+	
+	@Transactional(propagation = Propagation.SUPPORTS)
+	public void delete(Long id) {
+		if (!accountsPayableRepository.existsById(id)) {
+    		throw new ResourceNotFoundException("Recurso não encontrado");
+    	}
+    	try {
+    		accountsPayableRepository.deleteById(id);    		
+    	}
+        catch (DataIntegrityViolationException e) {
+            throw new DatabaseException("Falha de integridade referencial");
+        }
 	}
 	
 }
