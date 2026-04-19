@@ -25,6 +25,7 @@ public class CreditCardBill {
 	@JoinColumn(name = "credit_card_id")
 	private CreditCard creditCard;
 	
+	private LocalDate openingDate;
 	private LocalDate closingDate;
 	private LocalDate dueDate;
 	private Double totalAmount;
@@ -35,9 +36,11 @@ public class CreditCardBill {
 	public CreditCardBill() {
 	}
 
-	public CreditCardBill(Long id, LocalDate closingDate, LocalDate dueDate, Double totalAmount, PaymentStatus status) {
+	public CreditCardBill(Long id, LocalDate openingDate, LocalDate closingDate, LocalDate dueDate, Double totalAmount,
+			PaymentStatus status) {
 		super();
 		this.id = id;
+		this.openingDate = openingDate;
 		this.closingDate = closingDate;
 		this.dueDate = dueDate;
 		this.totalAmount = totalAmount;
@@ -50,6 +53,14 @@ public class CreditCardBill {
 
 	public void setId(Long id) {
 		this.id = id;
+	}
+
+	public LocalDate getOpeningDate() {
+		return openingDate;
+	}
+
+	public void setOpeningDate(LocalDate openingDate) {
+		this.openingDate = openingDate;
 	}
 
 	public LocalDate getClosingDate() {
