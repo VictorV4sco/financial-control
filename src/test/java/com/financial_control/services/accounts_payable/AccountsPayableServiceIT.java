@@ -1,4 +1,4 @@
-package com.financial_control.services;
+package com.financial_control.services.accounts_payable;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +19,7 @@ import com.financial_control.dtos.AccountsPayableUpdateDTO;
 import com.financial_control.entities.AccountsPayable;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.AccountsPayableRepository;
+import com.financial_control.services.AccountsPayableService;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 import jakarta.transaction.Transactional;
