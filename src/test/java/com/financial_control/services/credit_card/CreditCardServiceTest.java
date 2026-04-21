@@ -22,6 +22,7 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.CreditCardReadDTO;
 import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.entities.CreditCard;
+import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.services.CreditCardService;
 import com.financial_control.services.exceptions.DatabaseException;
@@ -32,6 +33,9 @@ class CreditCardServiceTest {
 
 	@Mock
 	private CreditCardRepository creditCardRepository;
+
+	@Mock
+	private CreditCardBillRepository creditCardBillRepository;
 
 	@InjectMocks
 	private CreditCardService creditCardService;
@@ -101,38 +105,49 @@ class CreditCardServiceTest {
 	@Test
 	void deleteCreditCardShouldRemoveCardWhenIdExists() {
 		Long id = 1L;
+		CreditCard creditCard = new CreditCard(id, "Nubank");
 
-		when(creditCardRepository.existsById(id)).thenReturn(true);
+		when(creditCardRepository.findById(id)).thenReturn(Optional.of(creditCard));
 
 		assertDoesNotThrow(() -> creditCardService.deleteCreditCard(id));
 
-		verify(creditCardRepository).existsById(id);
-		verify(creditCardRepository).deleteById(id);
+		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository, never()).delete(any());
+		verify(creditCardBillRepository, never()).deleteAll(any());
+		verify(creditCardRepository).delete(creditCard);
 	}
 
 	@Test
 	void deleteCreditCardShouldThrowExceptionWhenIdDoesNotExist() {
 		Long id = 1L;
 
-		when(creditCardRepository.existsById(id)).thenReturn(false);
+		when(creditCardRepository.findById(id)).thenReturn(Optional.empty());
 
-		assertThrows(ResourceNotFoundException.class, () -> creditCardService.deleteCreditCard(id));
+		ResourceNotFoundException exception = assertThrows(
+				ResourceNotFoundException.class,
+				() -> creditCardService.deleteCreditCard(id));
 
-		verify(creditCardRepository).existsById(id);
-		verify(creditCardRepository, never()).deleteById(id);
+		assertEquals("Recurso não encontrado", exception.getMessage());
+		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository, never()).delete(any());
+		verify(creditCardBillRepository, never()).deleteAll(any());
+		verify(creditCardRepository, never()).delete(any(CreditCard.class));
 	}
 
 	@Test
 	void deleteCreditCardShouldThrowDatabaseExceptionWhenDeleteViolatesIntegrity() {
 		Long id = 1L;
+		CreditCard creditCard = new CreditCard(id, "Nubank");
 
-		when(creditCardRepository.existsById(id)).thenReturn(true);
+		when(creditCardRepository.findById(id)).thenReturn(Optional.of(creditCard));
 		org.mockito.Mockito.doThrow(new DataIntegrityViolationException("constraint"))
-				.when(creditCardRepository).deleteById(id);
+				.when(creditCardRepository).delete(creditCard);
 
 		assertThrows(DatabaseException.class, () -> creditCardService.deleteCreditCard(id));
 
-		verify(creditCardRepository).existsById(id);
-		verify(creditCardRepository).deleteById(id);
+		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository, never()).delete(any());
+		verify(creditCardBillRepository, never()).deleteAll(any());
+		verify(creditCardRepository).delete(creditCard);
 	}
 }
