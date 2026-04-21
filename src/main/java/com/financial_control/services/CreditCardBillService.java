@@ -13,6 +13,7 @@ import com.financial_control.entities.CreditCardBill;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 @Service
@@ -23,6 +24,9 @@ public class CreditCardBillService {
 
 	@Autowired
 	private CreditCardRepository creditCardRepository;
+
+	@Autowired
+	private TransactionRepository transactionRepository;
 
 	@Transactional(readOnly = true)
 	public List<CreditCardBillReadDTO> findByCreditCardAndMonthAndYear(Long creditCardId, Integer year, Integer month) {
@@ -58,5 +62,14 @@ public class CreditCardBillService {
 				billSaved.getDueDate(),
 				billSaved.getTotalAmount(),
 				billSaved.getStatus());
+	}
+
+	@Transactional
+	public void deleteCreditCardBill(Long id) {
+		CreditCardBill bill = creditCardBillRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Credit card bill ID not found"));
+
+		transactionRepository.deleteByCreditCardBillId(id);
+		creditCardBillRepository.delete(bill);
 	}
 }

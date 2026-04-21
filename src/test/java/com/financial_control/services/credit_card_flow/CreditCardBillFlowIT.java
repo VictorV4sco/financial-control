@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.financial_control.dtos.CreditCardBillInsertDTO;
 import com.financial_control.dtos.CreditCardBillReadDTO;
@@ -18,11 +19,13 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardBillService;
 import com.financial_control.services.CreditCardService;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class CreditCardBillFlowIT {
 
 	@Autowired
@@ -37,8 +40,12 @@ class CreditCardBillFlowIT {
 	@Autowired
 	private CreditCardBillRepository creditCardBillRepository;
 
+	@Autowired
+	private TransactionRepository transactionRepository;
+
 	@BeforeEach
 	void setUp() {
+		transactionRepository.deleteAll();
 		creditCardBillRepository.deleteAll();
 		creditCardRepository.deleteAll();
 	}

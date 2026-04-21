@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.financial_control.dtos.AccountsPayableInsertDTO;
 import com.financial_control.dtos.AccountsPayableReadDTO;
@@ -25,6 +26,7 @@ import com.financial_control.services.exceptions.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class AccountsPayableServiceIT {
 
@@ -61,8 +63,9 @@ class AccountsPayableServiceIT {
 
 	@Test
 	void getByMonthAndYearShouldReturnBillsAndUpdateOverdueStatus() {
-		LocalDate overdueDate = LocalDate.now().minusDays(3);
-		LocalDate futureDate = LocalDate.now().plusDays(10);
+		LocalDate today = LocalDate.now();
+		LocalDate overdueDate = today.minusDays(1);
+		LocalDate futureDate = today.plusDays(1);
 
 		accountsPayableRepository.save(new AccountsPayable(
 				null,
@@ -78,8 +81,8 @@ class AccountsPayableServiceIT {
 				PaymentStatus.PENDING));
 
 		List<AccountsPayableReadDTO> result = accountsPayableService.getByMonthAndYear(
-				LocalDate.now().getMonthValue(),
-				LocalDate.now().getYear());
+				today.getMonthValue(),
+				today.getYear());
 
 		assertEquals(2, result.size());
 		assertEquals(1, result.stream().filter(item -> item.status() == PaymentStatus.OVERDUE).count());

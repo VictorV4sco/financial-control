@@ -32,4 +32,26 @@ public interface CreditCardBillRepository extends JpaRepository<CreditCardBill, 
 			@Param("creditCardId") Long creditCardId,
 			@Param("year") Integer year,
 			@Param("month") Integer month);
+
+	@Query("""
+			SELECT b
+			FROM CreditCardBill b
+			WHERE b.creditCard.id = (
+			    SELECT currentBill.creditCard.id
+			    FROM CreditCardBill currentBill
+			    WHERE currentBill.id = :creditCardBillId
+			)
+			AND b.closingDate > (
+			    SELECT currentBill.closingDate
+			    FROM CreditCardBill currentBill
+			    WHERE currentBill.id = :creditCardBillId
+			)
+			ORDER BY b.closingDate
+			""")
+	List<CreditCardBill> findFutureBills(@Param("creditCardBillId") Long creditCardBillId);
+
+	default List<CreditCardBill> findNextBills(Long creditCardBillId, int quantity) {
+		List<CreditCardBill> futureBills = findFutureBills(creditCardBillId);
+		return futureBills.stream().limit(quantity).toList();
+	}
 }

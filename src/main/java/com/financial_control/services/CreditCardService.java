@@ -14,6 +14,7 @@ import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.entities.CreditCard;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
@@ -25,6 +26,9 @@ public class CreditCardService {
 
 	@Autowired
 	private CreditCardBillRepository creditCardBillRepository;
+
+	@Autowired
+	private TransactionRepository transactionRepository;
 
 	@Transactional(readOnly = true)
 	public List<CreditCardReadDTO> findAllCreditCard() {
@@ -56,6 +60,7 @@ public class CreditCardService {
 				.orElseThrow(() -> new ResourceNotFoundException("Recurso não encontrado"));
 		try {
 			List.copyOf(new ArrayList<>(creditCard.getBill())).forEach(bill -> {
+				transactionRepository.deleteByCreditCardBillId(bill.getId());
 				creditCard.removeBill(bill);
 				creditCardBillRepository.delete(bill);
 			});

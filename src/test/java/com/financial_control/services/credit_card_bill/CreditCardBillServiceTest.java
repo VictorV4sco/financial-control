@@ -23,6 +23,7 @@ import com.financial_control.entities.CreditCardBill;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardBillService;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
@@ -34,6 +35,9 @@ class CreditCardBillServiceTest {
 
 	@Mock
 	private CreditCardRepository creditCardRepository;
+
+	@Mock
+	private TransactionRepository transactionRepository;
 
 	@InjectMocks
 	private CreditCardBillService creditCardBillService;
@@ -133,5 +137,27 @@ class CreditCardBillServiceTest {
 
 		assertEquals("Credit card ID not found", exception.getMessage());
 		verify(creditCardRepository).findById(1L);
+	}
+
+	@Test
+	void deleteCreditCardBillShouldDeleteTransactionsBeforeDeletingBill() {
+		Long billId = 10L;
+		CreditCard creditCard = new CreditCard(1L, "Nubank");
+		CreditCardBill bill = new CreditCardBill(
+				billId,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				1000.0,
+				PaymentStatus.PENDING);
+		bill.setCreditCard(creditCard);
+
+		when(creditCardBillRepository.findById(billId)).thenReturn(Optional.of(bill));
+
+		creditCardBillService.deleteCreditCardBill(billId);
+
+		verify(creditCardBillRepository).findById(billId);
+		verify(transactionRepository).deleteByCreditCardBillId(billId);
+		verify(creditCardBillRepository).delete(bill);
 	}
 }
