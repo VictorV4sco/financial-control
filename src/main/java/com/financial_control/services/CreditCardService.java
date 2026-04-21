@@ -1,5 +1,6 @@
 package com.financial_control.services;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.CreditCardReadDTO;
 import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.entities.CreditCard;
+import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
@@ -20,6 +22,9 @@ public class CreditCardService {
 
 	@Autowired
 	private CreditCardRepository creditCardRepository;
+
+	@Autowired
+	private CreditCardBillRepository creditCardBillRepository;
 
 	@Transactional(readOnly = true)
 	public List<CreditCardReadDTO> findAllCreditCard() {
@@ -47,11 +52,14 @@ public class CreditCardService {
 
 	@Transactional
 	public void deleteCreditCard(Long id) {
-		if (!creditCardRepository.existsById(id)) {
-			throw new ResourceNotFoundException("Recurso não encontrado");
-		}
+		CreditCard creditCard = creditCardRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Recurso não encontrado"));
 		try {
-			creditCardRepository.deleteById(id);
+			List.copyOf(new ArrayList<>(creditCard.getBill())).forEach(bill -> {
+				creditCard.removeBill(bill);
+				creditCardBillRepository.delete(bill);
+			});
+			creditCardRepository.delete(creditCard);
 		}
 		catch (DataIntegrityViolationException e) {
 			throw new DatabaseException("Falha de integridade referencial");

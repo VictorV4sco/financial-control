@@ -42,12 +42,12 @@ public class CreditCardBillService {
 				.orElseThrow(() -> new ResourceNotFoundException("Credit card ID not found"));
 
 		CreditCardBill bill = new CreditCardBill();
-		bill.setCreditCard(creditCard);
 		bill.setOpeningDate(dto.openingDate());
 		bill.setClosingDate(dto.closingDate());
 		bill.setDueDate(dto.dueDate());
 		bill.setTotalAmount(0.0);
 		bill.setStatus(PaymentStatus.PENDING);
+		creditCard.addBill(bill);
 
 		CreditCardBill billSaved = creditCardBillRepository.save(bill);
 		return new CreditCardBillInsertDTO(

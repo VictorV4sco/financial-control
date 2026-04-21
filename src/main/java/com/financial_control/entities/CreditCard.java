@@ -21,7 +21,7 @@ public class CreditCard {
 	
 	private String name;
 	
-	@OneToMany(mappedBy = "creditCard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "creditCard", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<CreditCardBill> bills = new ArrayList<>();
 	
 	public CreditCard() {
@@ -38,6 +38,13 @@ public class CreditCard {
 	        bills.add(bill);
 	        bill.setCreditCard(this);
 	    }
+	}
+
+	public void removeBill(CreditCardBill bill) {
+		if (bill != null) {
+			bills.remove(bill);
+			bill.setCreditCard(null);
+		}
 	}
 
 	public Long getId() {
