@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.financial_control.dtos.TransactionInsertDTO;
 import com.financial_control.dtos.TransactionReadDTO;
 import com.financial_control.dtos.TransactionUpdateDTO;
+import com.financial_control.entities.CreditCard;
 import com.financial_control.entities.CreditCardBill;
 import com.financial_control.entities.Transaction;
 import com.financial_control.enums.PaymentStatus;
@@ -179,8 +180,9 @@ class TransactionServiceTest {
 	}
 
 	@Test
-	void insertTransactionShouldThrowExceptionWhenThereAreNotEnoughFutureBillsForInstallments() {
+	void insertTransactionShouldCreateMissingFutureBillsForInstallments() {
 		Long firstBillId = 1L;
+		CreditCard creditCard = new CreditCard(1L, "Nubank");
 		CreditCardBill firstBill = new CreditCardBill(
 				firstBillId,
 				LocalDate.of(2026, 4, 1),
@@ -188,6 +190,7 @@ class TransactionServiceTest {
 				LocalDate.of(2026, 4, 25),
 				0.0,
 				PaymentStatus.PENDING);
+		firstBill.setCreditCard(creditCard);
 		TransactionInsertDTO dto = new TransactionInsertDTO(
 				null,
 				firstBillId,
@@ -200,15 +203,18 @@ class TransactionServiceTest {
 
 		when(creditCardBillRepository.findById(firstBillId)).thenReturn(Optional.of(firstBill));
 		when(creditCardBillRepository.findNextBills(firstBillId, 5)).thenReturn(List.of());
+		when(creditCardBillRepository.save(any(CreditCardBill.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		ResourceNotFoundException exception = assertThrows(
-				ResourceNotFoundException.class,
-				() -> transactionService.insertTransaction(dto));
+		TransactionInsertDTO result = transactionService.insertTransaction(dto);
 
-		assertEquals("Not enough future bills to generate all installments", exception.getMessage());
+		assertEquals("Phone", result.name());
+		assertEquals(true, result.installmentPurchase());
+		assertEquals(6, result.installmentCount());
 		verify(creditCardBillRepository).findById(firstBillId);
 		verify(creditCardBillRepository).findNextBills(firstBillId, 5);
-		verify(transactionRepository, never()).save(any(Transaction.class));
+		verify(creditCardBillRepository, times(5)).save(any(CreditCardBill.class));
+		verify(transactionRepository, times(6)).save(any(Transaction.class));
 	}
 
 	@Test

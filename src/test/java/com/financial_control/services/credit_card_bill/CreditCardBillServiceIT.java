@@ -2,6 +2,7 @@ package com.financial_control.services.credit_card_bill;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,13 +15,16 @@ import org.springframework.test.context.ActiveProfiles;
 
 import com.financial_control.dtos.CreditCardBillInsertDTO;
 import com.financial_control.dtos.CreditCardBillReadDTO;
+import com.financial_control.dtos.CreditCardBillUpdateDTO;
 import com.financial_control.entities.CreditCard;
 import com.financial_control.entities.CreditCardBill;
+import com.financial_control.entities.Transaction;
 import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardBillService;
+import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 import jakarta.transaction.Transactional;
@@ -135,5 +139,203 @@ class CreditCardBillServiceIT {
 				() -> creditCardBillService.findByCreditCardAndMonthAndYear(creditCard.getId(), 2026, 4));
 
 		assertEquals("No credit card bills found for this card, month and year", exception.getMessage());
+	}
+
+	@Test
+	void updateCreditCardBillShouldPersistUpdatedDataWithoutChangingTotalAmount() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBill savedBill = new CreditCardBill(
+				null,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				100.0,
+				PaymentStatus.PENDING);
+		savedBill.setCreditCard(creditCard);
+		savedBill = creditCardBillRepository.save(savedBill);
+
+		CreditCardBillInsertDTO dto = new CreditCardBillInsertDTO(
+				null,
+				creditCard.getId(),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 25),
+				LocalDate.of(2026, 6, 5),
+				250.0,
+				PaymentStatus.PAID);
+
+		CreditCardBillUpdateDTO result = creditCardBillService.updateCreditCardBill(savedBill.getId(), dto);
+		CreditCardBill updatedBill = creditCardBillRepository.findById(savedBill.getId()).orElseThrow();
+
+		assertEquals(savedBill.getId(), result.id());
+		assertEquals(LocalDate.of(2026, 4, 25), result.openingDate());
+		assertEquals(LocalDate.of(2026, 5, 25), updatedBill.getClosingDate());
+		assertEquals(LocalDate.of(2026, 6, 5), updatedBill.getDueDate());
+		assertEquals(100.0, updatedBill.getTotalAmount());
+		assertEquals(PaymentStatus.PAID, updatedBill.getStatus());
+	}
+
+	@Test
+	void updateCreditCardBillShouldThrowExceptionWhenBillDoesNotExist() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBillInsertDTO dto = new CreditCardBillInsertDTO(
+				null,
+				creditCard.getId(),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 25),
+				LocalDate.of(2026, 6, 5),
+				250.0,
+				PaymentStatus.PAID);
+
+		ResourceNotFoundException exception = assertThrows(
+				ResourceNotFoundException.class,
+				() -> creditCardBillService.updateCreditCardBill(999L, dto));
+
+		assertEquals("Credit card bill ID not found", exception.getMessage());
+	}
+
+	@Test
+	void updateCreditCardBillShouldThrowExceptionWhenChangingDatesAndBillHasTransactions() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBill savedBill = new CreditCardBill(
+				null,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				1000.0,
+				PaymentStatus.PENDING);
+		savedBill.setCreditCard(creditCard);
+		savedBill = creditCardBillRepository.save(savedBill);
+		Long savedBillId = savedBill.getId();
+
+		Transaction transaction = new Transaction(
+				null,
+				"Notebook",
+				"Work purchase",
+				LocalDate.of(2026, 4, 15),
+				true,
+				3,
+				3000.0,
+				1000.0,
+				1);
+		transaction.setCreditCardBill(savedBill);
+		transactionRepository.save(transaction);
+
+		CreditCardBillInsertDTO dto = new CreditCardBillInsertDTO(
+				null,
+				creditCard.getId(),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 25),
+				LocalDate.of(2026, 6, 5),
+				null,
+				PaymentStatus.PAID);
+
+		DatabaseException exception = assertThrows(
+				DatabaseException.class,
+				() -> creditCardBillService.updateCreditCardBill(savedBillId, dto));
+		CreditCardBill unchangedBill = creditCardBillRepository.findById(savedBillId).orElseThrow();
+
+		assertEquals("Credit card bill dates cannot be changed because it has transactions", exception.getMessage());
+		assertEquals(LocalDate.of(2026, 4, 1), unchangedBill.getOpeningDate());
+		assertEquals(LocalDate.of(2026, 4, 25), unchangedBill.getClosingDate());
+		assertEquals(LocalDate.of(2026, 5, 5), unchangedBill.getDueDate());
+		assertEquals(1000.0, unchangedBill.getTotalAmount());
+	}
+
+	@Test
+	void updateCreditCardBillShouldAllowStatusChangeWhenBillHasTransactionsAndDatesDoNotChange() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBill savedBill = new CreditCardBill(
+				null,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				1000.0,
+				PaymentStatus.PENDING);
+		savedBill.setCreditCard(creditCard);
+		savedBill = creditCardBillRepository.save(savedBill);
+
+		Transaction transaction = new Transaction(
+				null,
+				"Notebook",
+				"Work purchase",
+				LocalDate.of(2026, 4, 15),
+				true,
+				3,
+				3000.0,
+				1000.0,
+				1);
+		transaction.setCreditCardBill(savedBill);
+		transactionRepository.save(transaction);
+
+		CreditCardBillInsertDTO dto = new CreditCardBillInsertDTO(
+				null,
+				creditCard.getId(),
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				null,
+				PaymentStatus.PAID);
+
+		CreditCardBillUpdateDTO result = creditCardBillService.updateCreditCardBill(savedBill.getId(), dto);
+		CreditCardBill updatedBill = creditCardBillRepository.findById(savedBill.getId()).orElseThrow();
+
+		assertEquals(PaymentStatus.PAID, result.status());
+		assertEquals(PaymentStatus.PAID, updatedBill.getStatus());
+		assertEquals(1000.0, updatedBill.getTotalAmount());
+	}
+
+	@Test
+	void deleteCreditCardBillShouldRemoveBillFromDatabase() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBill savedBill = new CreditCardBill(
+				null,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				0.0,
+				PaymentStatus.PENDING);
+		savedBill.setCreditCard(creditCard);
+		savedBill = creditCardBillRepository.save(savedBill);
+
+		creditCardBillService.deleteCreditCardBill(savedBill.getId());
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> creditCardBillService.findByCreditCardAndMonthAndYear(creditCard.getId(), 2026, 4));
+	}
+
+	@Test
+	void deleteCreditCardBillShouldThrowExceptionWhenBillHasTransactions() {
+		CreditCard creditCard = creditCardRepository.save(new CreditCard(null, "Nubank"));
+		CreditCardBill savedBill = new CreditCardBill(
+				null,
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 25),
+				LocalDate.of(2026, 5, 5),
+				1000.0,
+				PaymentStatus.PENDING);
+		savedBill.setCreditCard(creditCard);
+		savedBill = creditCardBillRepository.save(savedBill);
+		Long savedBillId = savedBill.getId();
+
+		Transaction transaction = new Transaction(
+				null,
+				"Notebook",
+				"Work purchase",
+				LocalDate.of(2026, 4, 15),
+				true,
+				3,
+				3000.0,
+				1000.0,
+				1);
+		transaction.setCreditCardBill(savedBill);
+		transactionRepository.save(transaction);
+
+		DatabaseException exception = assertThrows(
+				DatabaseException.class,
+				() -> creditCardBillService.deleteCreditCardBill(savedBillId));
+
+		assertEquals("Credit card bill cannot be deleted because it has transactions", exception.getMessage());
+		assertTrue(creditCardBillRepository.existsById(savedBillId));
+		assertEquals(1, transactionRepository.findAllByCreditCardBillId(savedBillId).size());
 	}
 }

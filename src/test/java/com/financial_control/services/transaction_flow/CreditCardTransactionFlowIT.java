@@ -3,6 +3,7 @@ package com.financial_control.services.transaction_flow;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +25,7 @@ import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardBillService;
 import com.financial_control.services.CreditCardService;
 import com.financial_control.services.TransactionService;
+import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
 
 @SpringBootTest
@@ -56,7 +58,7 @@ class CreditCardTransactionFlowIT {
 	}
 
 	@Test
-	void shouldDeleteTransactionsWhenDeletingCreditCardBill() {
+	void shouldNotDeleteCreditCardBillWhenItHasTransactions() {
 		Long creditCardId = creditCardService.insertCreditCard(new CreditCardInsertDTO(null, "Nubank")).id();
 
 		Long billId = creditCardBillService.insertCreditCardBill(new CreditCardBillInsertDTO(
@@ -81,10 +83,10 @@ class CreditCardTransactionFlowIT {
 		List<Transaction> transactionsBeforeDelete = transactionRepository.findAllByCreditCardBillId(billId);
 		assertFalse(transactionsBeforeDelete.isEmpty());
 
-		assertDoesNotThrow(() -> creditCardBillService.deleteCreditCardBill(billId));
+		assertThrows(DatabaseException.class, () -> creditCardBillService.deleteCreditCardBill(billId));
 
-		assertFalse(creditCardBillRepository.existsById(billId));
-		assertTrueNoTransactionsForBill(billId);
+		assertTrue(creditCardBillRepository.existsById(billId));
+		assertFalse(transactionRepository.findAllByCreditCardBillId(billId).isEmpty());
 	}
 
 	@Test

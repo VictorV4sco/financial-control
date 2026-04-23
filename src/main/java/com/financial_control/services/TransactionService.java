@@ -12,6 +12,7 @@ import com.financial_control.dtos.TransactionReadDTO;
 import com.financial_control.dtos.TransactionUpdateDTO;
 import com.financial_control.entities.CreditCardBill;
 import com.financial_control.entities.Transaction;
+import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
@@ -58,13 +59,12 @@ public class TransactionService {
 
 		int nextBillsQuantity = dto.installmentCount() - 1;
 		List<CreditCardBill> nextBills = creditCardBillRepository.findNextBills(dto.creditCardBillId(), nextBillsQuantity);
-		if (nextBills.size() != nextBillsQuantity) {
-			throw new ResourceNotFoundException("Not enough future bills to generate all installments");
-		}
+		List<CreditCardBill> futureBills = new ArrayList<>(nextBills);
+		createMissingFutureBills(currentBill, futureBills, nextBillsQuantity);
 
 		List<CreditCardBill> targetBills = new ArrayList<>();
 		targetBills.add(currentBill);
-		targetBills.addAll(nextBills);
+		targetBills.addAll(futureBills);
 
 		double installmentPrice = dto.price() / dto.installmentCount();
 		for (int i = 0; i < targetBills.size(); i++) {
@@ -74,6 +74,25 @@ public class TransactionService {
 		}
 
 		return dto;
+	}
+
+	private void createMissingFutureBills(CreditCardBill currentBill, List<CreditCardBill> futureBills,
+			int expectedQuantity) {
+		CreditCardBill previousBill = futureBills.isEmpty() ? currentBill : futureBills.get(futureBills.size() - 1);
+
+		while (futureBills.size() < expectedQuantity) {
+			CreditCardBill nextBill = new CreditCardBill();
+			nextBill.setCreditCard(currentBill.getCreditCard());
+			nextBill.setOpeningDate(previousBill.getClosingDate());
+			nextBill.setClosingDate(previousBill.getClosingDate().plusMonths(1));
+			nextBill.setDueDate(previousBill.getDueDate().plusMonths(1));
+			nextBill.setTotalAmount(0.0);
+			nextBill.setStatus(PaymentStatus.PENDING);
+
+			CreditCardBill savedBill = creditCardBillRepository.save(nextBill);
+			futureBills.add(savedBill);
+			previousBill = savedBill;
+		}
 	}
 
 	@Transactional

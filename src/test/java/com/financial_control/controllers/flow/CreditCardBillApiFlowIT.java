@@ -16,6 +16,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -33,8 +34,12 @@ class CreditCardBillApiFlowIT {
 	@Autowired
 	private CreditCardBillRepository creditCardBillRepository;
 
+	@Autowired
+	private TransactionRepository transactionRepository;
+
 	@BeforeEach
 	void setUp() {
+		transactionRepository.deleteAll();
 		creditCardBillRepository.deleteAll();
 		creditCardRepository.deleteAll();
 		RestAssuredMockMvc.webAppContextSetup(webApplicationContext);

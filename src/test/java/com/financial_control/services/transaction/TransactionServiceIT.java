@@ -123,6 +123,42 @@ class TransactionServiceIT {
 	}
 
 	@Test
+	void insertTransactionShouldCreateMissingFutureBillsForInstallments() {
+		CreditCardBill firstBill = createBillChain("Automatic Bills", List.of(
+				LocalDate.of(2026, 4, 1),
+				LocalDate.of(2026, 4, 16),
+				LocalDate.of(2026, 4, 25)))
+				.getFirst();
+
+		TransactionInsertDTO dto = new TransactionInsertDTO(
+				null,
+				firstBill.getId(),
+				"Phone",
+				"New phone",
+				LocalDate.of(2026, 4, 15),
+				true,
+				3,
+				2400.0);
+
+		transactionService.insertTransaction(dto);
+
+		List<Transaction> savedTransactions = transactionRepository.findAll();
+		List<CreditCardBill> savedBills = creditCardBillRepository.findAll();
+
+		assertEquals(3, savedTransactions.size());
+		assertEquals(3, savedBills.size());
+		assertEquals(800.0, savedBills.get(0).getTotalAmount());
+		assertEquals(800.0, savedBills.get(1).getTotalAmount());
+		assertEquals(800.0, savedBills.get(2).getTotalAmount());
+		assertEquals(LocalDate.of(2026, 4, 16), savedBills.get(1).getOpeningDate());
+		assertEquals(LocalDate.of(2026, 5, 16), savedBills.get(1).getClosingDate());
+		assertEquals(LocalDate.of(2026, 5, 25), savedBills.get(1).getDueDate());
+		assertEquals(LocalDate.of(2026, 5, 16), savedBills.get(2).getOpeningDate());
+		assertEquals(LocalDate.of(2026, 6, 16), savedBills.get(2).getClosingDate());
+		assertEquals(LocalDate.of(2026, 6, 25), savedBills.get(2).getDueDate());
+	}
+
+	@Test
 	void findByCreditCardBillShouldReturnPersistedTransactions() {
 		CreditCardBill currentBill = createBillChain("XP", List.of(
 				LocalDate.of(2026, 4, 1),
