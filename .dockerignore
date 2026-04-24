@@ -1,0 +1,10 @@
+.git
+.settings
+target
+.classpath
+.project
+README.md
+HELP.md
+*.log
+.env
+.env.*

@@ -216,6 +216,71 @@ The API starts at:
 http://localhost:8080
 ```
 
+## Running With Docker
+
+The project also includes:
+
+- `Dockerfile`
+- `.dockerignore`
+- `docker-compose.yml`
+
+This setup starts:
+
+- the backend on `http://localhost:8080`
+- MySQL in a container, exposed locally on port `3307`
+
+Run everything with:
+
+```bash
+docker compose up --build
+```
+
+After startup:
+
+- backend: `http://localhost:8080`
+- MySQL host: `localhost`
+- MySQL port: `3307`
+- MySQL database: `financial_control`
+
+The backend container already receives:
+
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+
+through `docker-compose.yml`.
+
+Optional environment variables for Docker:
+
+```powershell
+$env:MYSQL_DATABASE="financial_control"
+$env:MYSQL_ROOT_PASSWORD="your_mysql_password"
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="your_mysql_password"
+docker compose up --build
+```
+
+## CORS
+
+The backend has global CORS enabled for local frontend development.
+
+Default allowed origins:
+
+- `http://localhost:*`
+- `http://127.0.0.1:*`
+
+This covers common frontend dev servers such as:
+
+- Vite
+- React
+- Angular
+
+The configuration is controlled by:
+
+```properties
+app.cors.allowed-origin-patterns=http://localhost:*,http://127.0.0.1:*
+```
+
 ## Test Configuration
 
 Tests use a dedicated H2 in-memory database configured in:
