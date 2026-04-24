@@ -178,12 +178,25 @@ The main application uses MySQL and reads configuration from:
 Default local configuration:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/financial_control
-spring.datasource.username=root
-spring.datasource.password=root
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/financial_control}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 ```
 
-Adjust these values to match your local environment before running the API.
+Set the environment variables before running the API.
+
+PowerShell example:
+
+```powershell
+$env:DB_USERNAME="your_username"
+$env:DB_PASSWORD="your_password"
+```
+
+Optional, if you want to override the default URL:
+
+```powershell
+$env:DB_URL="jdbc:mysql://localhost:3306/financial_control"
+```
 
 ### Run with Maven Wrapper
 
