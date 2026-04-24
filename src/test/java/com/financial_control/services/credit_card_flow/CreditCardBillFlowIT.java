@@ -1,8 +1,8 @@
 package com.financial_control.services.credit_card_flow;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,7 +22,7 @@ import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardBillService;
 import com.financial_control.services.CreditCardService;
-import com.financial_control.services.exceptions.ResourceNotFoundException;
+import com.financial_control.services.exceptions.DatabaseException;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -138,7 +138,7 @@ class CreditCardBillFlowIT {
 	}
 
 	@Test
-	void shouldNotFindBillsAfterDeletingCreditCard() {
+	void shouldNotDeleteCreditCardWhenItHasOpenBills() {
 		CreditCardInsertDTO createdCard = creditCardService.insertCreditCard(new CreditCardInsertDTO(null, "Delete Flow"));
 
 		CreditCardBillInsertDTO createdBill = creditCardBillService.insertCreditCardBill(
@@ -151,12 +151,14 @@ class CreditCardBillFlowIT {
 						null,
 						null));
 
-		creditCardService.deleteCreditCard(createdCard.id());
+		DatabaseException exception = assertThrows(
+				DatabaseException.class,
+				() -> creditCardService.deleteCreditCard(createdCard.id()));
 
-		assertFalse(creditCardRepository.existsById(createdCard.id()));
-		assertFalse(creditCardBillRepository.existsById(createdBill.id()));
-		assertThrows(
-				ResourceNotFoundException.class,
-				() -> creditCardBillService.findByCreditCardAndMonthAndYear(createdCard.id(), 2026, 10));
+		assertEquals("Credit card cannot be deleted because it has open bills", exception.getMessage());
+		assertTrue(creditCardRepository.existsById(createdCard.id()));
+		assertTrue(creditCardBillRepository.existsById(createdBill.id()));
+		List<CreditCardBillReadDTO> result = creditCardBillService.findByCreditCardAndMonthAndYear(createdCard.id(), 2026, 10);
+		assertEquals(1, result.size());
 	}
 }

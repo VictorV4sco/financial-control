@@ -19,6 +19,7 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.TransactionInsertDTO;
 import com.financial_control.entities.CreditCardBill;
 import com.financial_control.entities.Transaction;
+import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.repositories.TransactionRepository;
@@ -119,6 +120,10 @@ class CreditCardTransactionFlowIT {
 				true,
 				2,
 				3000.0));
+
+		List<CreditCardBill> bills = creditCardBillRepository.findAll();
+		bills.forEach(bill -> bill.setStatus(PaymentStatus.PAID));
+		creditCardBillRepository.saveAll(bills);
 
 		assertDoesNotThrow(() -> creditCardService.deleteCreditCard(creditCardId));
 

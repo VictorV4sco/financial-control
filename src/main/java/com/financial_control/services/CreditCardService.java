@@ -12,6 +12,7 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.CreditCardReadDTO;
 import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.entities.CreditCard;
+import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
 import com.financial_control.repositories.TransactionRepository;
@@ -58,6 +59,12 @@ public class CreditCardService {
 	public void deleteCreditCard(Long id) {
 		CreditCard creditCard = creditCardRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Recurso não encontrado"));
+
+		boolean hasOpenBills = creditCardBillRepository.existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID);
+		if (hasOpenBills) {
+			throw new DatabaseException("Credit card cannot be deleted because it has open bills");
+		}
+
 		try {
 			List.copyOf(new ArrayList<>(creditCard.getBill())).forEach(bill -> {
 				transactionRepository.deleteByCreditCardBillId(bill.getId());

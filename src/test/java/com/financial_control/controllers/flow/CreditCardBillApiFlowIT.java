@@ -109,7 +109,7 @@ class CreditCardBillApiFlowIT {
 	}
 
 	@Test
-	void shouldReturn404WhenQueryingBillsAfterDeletingCreditCard() {
+	void shouldReturn400WhenDeletingCreditCardWithOpenBill() {
 		String createCardBody = """
 				{
 				  "name": "Delete Flow"
@@ -154,7 +154,10 @@ class CreditCardBillApiFlowIT {
 		.when()
 				.delete("/credit-card/delete/{id}", creditCardId)
 		.then()
-				.statusCode(204);
+				.statusCode(400)
+				.body("error", equalTo("Database exception"))
+				.body("message", equalTo("Credit card cannot be deleted because it has open bills"))
+				.body("path", equalTo("/credit-card/delete/" + creditCardId));
 
 		given()
 				.accept(ContentType.JSON)
@@ -164,9 +167,8 @@ class CreditCardBillApiFlowIT {
 		.when()
 				.get("/credit-card-bill")
 		.then()
-				.statusCode(404)
-				.body("error", equalTo("Resource not found"))
-				.body("message", equalTo("No credit card bills found for this card, month and year"))
-				.body("path", equalTo("/credit-card-bill"));
+				.statusCode(200)
+				.body("$", hasSize(1))
+				.body("[0].creditCardId", equalTo(creditCardId));
 	}
 }

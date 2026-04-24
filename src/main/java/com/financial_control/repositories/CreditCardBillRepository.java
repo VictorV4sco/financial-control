@@ -9,9 +9,12 @@ import org.springframework.stereotype.Repository;
 
 import com.financial_control.dtos.CreditCardBillReadDTO;
 import com.financial_control.entities.CreditCardBill;
+import com.financial_control.enums.PaymentStatus;
 
 @Repository
 public interface CreditCardBillRepository extends JpaRepository<CreditCardBill, Long> {
+
+	boolean existsByCreditCardIdAndStatusNot(Long creditCardId, PaymentStatus status);
 
 	@Query("""
 			SELECT new com.financial_control.dtos.CreditCardBillReadDTO(

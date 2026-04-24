@@ -189,6 +189,58 @@ class CreditCardTransactionApiFlowIT {
 		.then()
 				.statusCode(201);
 
+		Integer secondBillId = given()
+				.accept(ContentType.JSON)
+				.queryParam("creditCardId", creditCardId)
+				.queryParam("year", 2026)
+				.queryParam("month", 5)
+		.when()
+				.get("/credit-card-bill")
+		.then()
+				.statusCode(200)
+				.extract()
+				.path("[0].id");
+
+		String firstBillUpdateBody = """
+				{
+				  "creditCardId": %d,
+				  "openingDate": "2026-04-01",
+				  "closingDate": "2026-04-25",
+				  "dueDate": "2026-05-05",
+				  "status": "PAID"
+				}
+				""".formatted(creditCardId);
+
+		String secondBillUpdateBody = """
+				{
+				  "creditCardId": %d,
+				  "openingDate": "2026-04-25",
+				  "closingDate": "2026-05-25",
+				  "dueDate": "2026-06-05",
+				  "status": "PAID"
+				}
+				""".formatted(creditCardId);
+
+		given()
+				.contentType(ContentType.JSON)
+				.accept(ContentType.JSON)
+				.body(firstBillUpdateBody)
+		.when()
+				.put("/credit-card-bill/update/{id}", firstBillId)
+		.then()
+				.statusCode(200)
+				.body("status", equalTo("PAID"));
+
+		given()
+				.contentType(ContentType.JSON)
+				.accept(ContentType.JSON)
+				.body(secondBillUpdateBody)
+		.when()
+				.put("/credit-card-bill/update/{id}", secondBillId)
+		.then()
+				.statusCode(200)
+				.body("status", equalTo("PAID"));
+
 		given()
 				.accept(ContentType.JSON)
 		.when()

@@ -49,14 +49,14 @@ class CreditCardTransactionFlowTest {
 				LocalDate.of(2026, 4, 16),
 				LocalDate.of(2026, 4, 25),
 				1000.0,
-				PaymentStatus.PENDING);
+				PaymentStatus.PAID);
 		CreditCardBill secondBill = new CreditCardBill(
 				11L,
 				LocalDate.of(2026, 5, 1),
 				LocalDate.of(2026, 5, 16),
 				LocalDate.of(2026, 5, 25),
 				500.0,
-				PaymentStatus.PENDING);
+				PaymentStatus.PAID);
 
 		creditCard.addBill(firstBill);
 		creditCard.addBill(secondBill);

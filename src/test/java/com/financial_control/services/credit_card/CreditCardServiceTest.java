@@ -22,8 +22,11 @@ import com.financial_control.dtos.CreditCardInsertDTO;
 import com.financial_control.dtos.CreditCardReadDTO;
 import com.financial_control.dtos.CreditCardUpdateDTO;
 import com.financial_control.entities.CreditCard;
+import com.financial_control.entities.CreditCardBill;
+import com.financial_control.enums.PaymentStatus;
 import com.financial_control.repositories.CreditCardBillRepository;
 import com.financial_control.repositories.CreditCardRepository;
+import com.financial_control.repositories.TransactionRepository;
 import com.financial_control.services.CreditCardService;
 import com.financial_control.services.exceptions.DatabaseException;
 import com.financial_control.services.exceptions.ResourceNotFoundException;
@@ -36,6 +39,9 @@ class CreditCardServiceTest {
 
 	@Mock
 	private CreditCardBillRepository creditCardBillRepository;
+
+	@Mock
+	private TransactionRepository transactionRepository;
 
 	@InjectMocks
 	private CreditCardService creditCardService;
@@ -108,13 +114,43 @@ class CreditCardServiceTest {
 		CreditCard creditCard = new CreditCard(id, "Nubank");
 
 		when(creditCardRepository.findById(id)).thenReturn(Optional.of(creditCard));
+		when(creditCardBillRepository.existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID)).thenReturn(false);
 
 		assertDoesNotThrow(() -> creditCardService.deleteCreditCard(id));
 
 		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository).existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID);
 		verify(creditCardBillRepository, never()).delete(any());
 		verify(creditCardBillRepository, never()).deleteAll(any());
 		verify(creditCardRepository).delete(creditCard);
+	}
+
+	@Test
+	void deleteCreditCardShouldThrowDatabaseExceptionWhenCardHasOpenBills() {
+		Long id = 1L;
+		CreditCard creditCard = new CreditCard(id, "Nubank");
+		CreditCardBill bill = new CreditCardBill(
+				10L,
+				java.time.LocalDate.of(2026, 4, 1),
+				java.time.LocalDate.of(2026, 4, 25),
+				java.time.LocalDate.of(2026, 5, 5),
+				1000.0,
+				PaymentStatus.PENDING);
+		creditCard.addBill(bill);
+
+		when(creditCardRepository.findById(id)).thenReturn(Optional.of(creditCard));
+		when(creditCardBillRepository.existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID)).thenReturn(true);
+
+		DatabaseException exception = assertThrows(
+				DatabaseException.class,
+				() -> creditCardService.deleteCreditCard(id));
+
+		assertEquals("Credit card cannot be deleted because it has open bills", exception.getMessage());
+		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository).existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID);
+		verify(transactionRepository, never()).deleteByCreditCardBillId(any());
+		verify(creditCardBillRepository, never()).delete(any());
+		verify(creditCardRepository, never()).delete(any(CreditCard.class));
 	}
 
 	@Test
@@ -129,6 +165,7 @@ class CreditCardServiceTest {
 
 		assertEquals("Recurso não encontrado", exception.getMessage());
 		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository, never()).existsByCreditCardIdAndStatusNot(any(), any());
 		verify(creditCardBillRepository, never()).delete(any());
 		verify(creditCardBillRepository, never()).deleteAll(any());
 		verify(creditCardRepository, never()).delete(any(CreditCard.class));
@@ -140,12 +177,14 @@ class CreditCardServiceTest {
 		CreditCard creditCard = new CreditCard(id, "Nubank");
 
 		when(creditCardRepository.findById(id)).thenReturn(Optional.of(creditCard));
+		when(creditCardBillRepository.existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID)).thenReturn(false);
 		org.mockito.Mockito.doThrow(new DataIntegrityViolationException("constraint"))
 				.when(creditCardRepository).delete(creditCard);
 
 		assertThrows(DatabaseException.class, () -> creditCardService.deleteCreditCard(id));
 
 		verify(creditCardRepository).findById(id);
+		verify(creditCardBillRepository).existsByCreditCardIdAndStatusNot(id, PaymentStatus.PAID);
 		verify(creditCardBillRepository, never()).delete(any());
 		verify(creditCardBillRepository, never()).deleteAll(any());
 		verify(creditCardRepository).delete(creditCard);
