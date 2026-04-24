@@ -1,90 +1,295 @@
 # Financial Control API
 
-## 📌 Description
+## Overview
 
-A personal financial control API designed to manage income, expenses, and financial operations in a structured way.
+Financial Control API is a personal backend project built with Java and Spring Boot to manage:
 
-## 🎯 Objective
+- accounts payable
+- credit cards
+- credit card bills
+- credit card transactions
 
-This project is being developed for study and portfolio purposes, focusing on best practices in backend development using Java and Spring Boot.
+The project is being developed with a strong focus on clean layering, business rules, and automated tests.
 
-## 🚧 Status
+## Current Status
 
-In development
+The API is under active development.
 
-## 🛠 Technologies
+Implemented modules:
 
-* Java 21
-* Spring Boot 4.0.5
-* Maven
-* MySQL
+- Accounts Payable CRUD
+- Credit Card CRUD
+- Credit Card Bill CRUD
+- Transaction CRUD
+- Unit, integration, API, and flow tests
+- JaCoCo coverage report
 
-## 🚀 Features
+## Tech Stack
 
-* User CRUD
-* Accounts Payable CRUD
-* Accounts Receivable CRUD
-* Financial categorization
-* Basic financial reports (planned)
-* Authentication and authorization (planned)
+- Java 21
+- Spring Boot 4.0.5
+- Spring Data JPA
+- Spring Validation
+- Spring Web MVC
+- Maven
+- MySQL
+- H2 for tests
+- JUnit 5
+- Mockito
+- Rest Assured Mock MVC
+- JaCoCo
 
-## ▶️ Running the Application
+## Domain Model
 
-To run the project locally, use the standard Maven command:
+### AccountsPayable
+
+Represents a bill to be paid by the user.
+
+Main fields:
+
+- `id`
+- `description`
+- `amount`
+- `dueDate`
+- `status`
+
+### CreditCard
+
+Represents a credit card created by the user.
+
+Main fields:
+
+- `id`
+- `name`
+
+### CreditCardBill
+
+Represents a credit card bill linked to a specific card.
+
+Main fields:
+
+- `id`
+- `creditCard`
+- `openingDate`
+- `closingDate`
+- `dueDate`
+- `totalAmount`
+- `status`
+
+### Transaction
+
+Represents a purchase made on a credit card bill.
+
+Main fields:
+
+- `id`
+- `creditCardBill`
+- `name`
+- `description`
+- `date`
+- `installmentPurchase`
+- `installmentCount`
+- `price`
+- `installmentPrice`
+- `installmentNumber`
+
+## Payment Status
+
+The project currently uses the following payment statuses:
+
+- `PENDING`
+- `PAID`
+- `OVERDUE`
+
+## Implemented Business Rules
+
+### Accounts Payable
+
+- New accounts payable entries are created with status `PENDING`
+- Query by month and year updates overdue bills automatically before returning results
+
+### Credit Card Bills
+
+- New bills are created with:
+  - `totalAmount = 0.0`
+  - `status = PENDING`
+- Bill dates can only be changed if the bill has no transactions
+- If a bill has transactions, only non-date fields such as `status` can be updated
+- `totalAmount` is not manually editable through update requests
+- A bill can only be deleted if it is empty
+
+### Transactions
+
+- Non-installment purchases are added to the selected bill
+- Installment purchases are distributed across the current bill and future bills
+- If future bills do not exist yet, they are created automatically
+- Each installment updates the target bill `totalAmount` automatically
+- Deleting a transaction updates the bill `totalAmount` automatically
+
+### Credit Cards
+
+- A credit card cannot be deleted if it has at least one open bill
+- Open bill means any bill with status different from `PAID`
+- If all bills are paid, deleting the card removes its bills and related transactions
+
+## API Endpoints
+
+### Accounts Payable
+
+- `GET /accounts-payable?month={month}&year={year}`
+- `POST /accounts-payable/insert`
+- `PUT /accounts-payable/update/{id}`
+- `DELETE /accounts-payable/delete/{id}`
+
+### Credit Card
+
+- `GET /credit-card`
+- `POST /credit-card/insert`
+- `PUT /credit-card/update/{id}`
+- `DELETE /credit-card/delete/{id}`
+
+### Credit Card Bill
+
+- `GET /credit-card-bill?creditCardId={id}&year={year}&month={month}`
+- `POST /credit-card-bill/insert`
+- `PUT /credit-card-bill/update/{id}`
+- `DELETE /credit-card-bill/delete/{id}`
+
+### Transaction
+
+- `GET /transaction?creditCardBillId={id}`
+- `POST /transaction/insert`
+- `PUT /transaction/update/{id}`
+- `DELETE /transaction/delete/{id}`
+
+## Running the Application
+
+### Requirements
+
+- Java 21
+- MySQL running locally
+
+### Application properties
+
+The main application uses MySQL and reads configuration from:
+
+- `src/main/resources/application.properties`
+
+Default local configuration:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/financial_control
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+Adjust these values to match your local environment before running the API.
+
+### Run with Maven Wrapper
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Or, if you have Maven installed globally:
+On Windows:
 
 ```bash
-mvn spring-boot:run
+mvnw.cmd spring-boot:run
 ```
 
-The application will start on:
+The API starts at:
 
-```
+```text
 http://localhost:8080
 ```
 
-## 🗄 Database
+## Test Configuration
 
-This project uses MySQL. You will need to:
+Tests use a dedicated H2 in-memory database configured in:
 
-1. Create a database
-2. Configure your credentials in:
+- `src/test/resources/application-test.properties`
 
-```
-application.properties
-```
+This keeps test execution isolated from the MySQL development database.
 
-Example:
+## Running Tests
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/financial_db
-spring.datasource.username=your_user
-spring.datasource.password=your_password
+Run all tests:
+
+```bash
+./mvnw test
 ```
 
-## 📁 Project Structure (planned)
+On Windows:
 
-* `controller` → API endpoints
-* `service` → Business logic
-* `repository` → Data access layer
-* `entity` → Domain models
+```bash
+mvnw.cmd test
+```
 
-## 📌 Future Improvements
+## Coverage Report
 
-* JWT authentication
-* Docker support
-* Unit and integration tests
-* API documentation (Swagger/OpenAPI)
+JaCoCo is configured in the Maven profile `coverage`.
 
-## 🤝 Contribution
+Generate the report with:
 
-This is a personal project for study and portfolio purposes, but suggestions are welcome.
+```bash
+./mvnw clean verify -Pcoverage
+```
 
-## 📄 License
+On Windows:
 
-This project is licensed under the MIT License.
+```bash
+mvnw.cmd clean verify -Pcoverage
+```
+
+Generated report:
+
+```text
+target/site/jacoco/index.html
+```
+
+Current JaCoCo configuration excludes:
+
+- `entities`
+- `FinancialControlApplication`
+
+## Project Structure
+
+```text
+src/main/java/com/financial_control
+|- controllers
+|- dtos
+|- entities
+|- enums
+|- repositories
+|- services
+|- services/exceptions
+
+src/test/java/com/financial_control
+|- controllers
+|- controllers/flow
+|- services
+|- services/... packages by module
+```
+
+## Testing Strategy Used In The Project
+
+The project currently follows a layered testing approach:
+
+- unit tests for service rules
+- integration tests for service + repository behavior
+- API tests for controller contracts
+- flow tests joining related modules together
+
+This helps validate both isolated business logic and real module interaction.
+
+## Next Possible Improvements
+
+- frontend-oriented query endpoints for bills by year and month
+- better support for early payment of installments
+- authentication and authorization
+- Swagger / OpenAPI documentation
+- Docker support
+
+## Purpose
+
+This is a study and portfolio project focused on backend architecture, business rules, and test coverage.
